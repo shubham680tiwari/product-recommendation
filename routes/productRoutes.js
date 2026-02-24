@@ -9,10 +9,16 @@ const {
     searchProduct
 } = require('../controller/productController');
 
-router.route('/').get(getAllProducts).post(createProduct);
-
-router.route('/:id').get(getProductById).put(updateProduct).delete(deleteProduct);
+router.route('/')
+    .get(getAllProducts)
+    .post(createProduct);
 
 router.get('/search', searchProduct);
+
+router.route('/:id')
+    .get(getProductById)
+    .put(updateProduct)
+    .delete(deleteProduct);
+
 
 module.exports = router;

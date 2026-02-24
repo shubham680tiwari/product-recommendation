@@ -34,7 +34,7 @@ const productSchema = new mongoose.Schema(
             type: String,
             required: [true, 'Category is required'],
             enum: {
-                values: ['Electronic', 'Clothing', 'Book', 'Sports'],
+                values: ['Electronics', 'Clothing', 'Book', 'Sports'],
                 message: '{VALUE} is not a valid cateogry'
             }
         },
