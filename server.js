@@ -6,11 +6,15 @@ const connectDB = require('./config/db')
 const productRoutes = require('./routes/productRoutes');
 const userRoutes = require('./routes/userRoutes');
 const cartRoutes = require('./routes/cartRoutes');
+const { initializeQdrant } = require('./config/qdrant');
 
 const app = express();
 
 // Connect to MongoDB
 connectDB();
+
+// Intialize Qdrant DB
+initializeQdrant()
 
 // Middleware
 app.use(cors());
