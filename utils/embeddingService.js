@@ -1,36 +1,44 @@
-const axios = require('axios');
+const API_KEY = process.env.GEMINI_API_KEY;
+const MODEL_NAME = 'gemini-embedding-2-preview';
+const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:embedContent?key=${API_KEY}`;
 
 // Generate embedding
-
 const generateEmbedding = async (text) => {
     try {
-        // validate the input
-        if (!text || typeof text !== 'string') {
-            throw new Error('Text should be non empty string');
+        const response = await fetch(ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                content: {
+                parts: [{ text: text }]
+                },
+                output_dimensionality: 768
+            })
+        });
+        
+        const data = await response.json();
+        console.log('Data', data);
+
+        if (!response.ok) {
+            throw new Error(data.error?.message || 'API Error');
         }
 
-        // Call OpenAI embedding API
-        const response = await axios.post(
-            'https://api.openai.com/v1/embeddings',
-            {
-                model: 'text-embedding-3-large',
-                input: text,
-                encoding_format: "float",
-            },
-            {
-                headers: {
-                    'Content-Type': 'aaplication/json',
-                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-                }
-            }
-        )
-
-        const embedding = response.data.data[0].embedding;
-
-        return embedding;
-
+        response.json({
+            embedding: data.embedding.values
+        });
 
     } catch (error) {
-        throw new Error('Failed to generate embedding')
+        console.error("Fetch Error:", error.message);
+        res.status(500).json({ error: error.message });
     }
-}
+};
+
+const generateProductEmbedding = async (product) => {
+    const text = `${product.name}, ${product.short_description}, ${product.category}`;
+    return await generateEmbedding(text);
+};
+
+module.exports ={
+    generateEmbedding,
+    generateProductEmbedding
+};

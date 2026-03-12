@@ -20,6 +20,24 @@ initializeQdrant()
 app.use(cors());
 app.use(express.json());
 
+app.post('/test-embedding', async (req, res) => {
+  const {generateEmbedding} = require('./utils/embeddingService');
+
+  try {
+    const embedding = await generateEmbedding('iphone 17 pro');
+    res.json({
+      success: true,
+      dimension: embedding.length,
+      sampleData: embedding.slice(0, 10)
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+});
+
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/cart', cartRoutes)
