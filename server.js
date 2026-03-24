@@ -24,7 +24,7 @@ app.post('/test-embedding', async (req, res) => {
   const {generateEmbedding} = require('./utils/embeddingService');
 
   try {
-    const embedding = await generateEmbedding('iphone 17 pro');
+    const embedding = await generateEmbedding('Macbook M5 pro');
     res.json({
       success: true,
       dimension: embedding.length,

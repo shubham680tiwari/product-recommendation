@@ -23,9 +23,8 @@ const generateEmbedding = async (text) => {
             throw new Error(data.error?.message || 'API Error');
         }
 
-        response.json({
-            embedding: data.embedding.values
-        });
+        return data.embedding.values
+        
 
     } catch (error) {
         console.error("Fetch Error:", error.message);

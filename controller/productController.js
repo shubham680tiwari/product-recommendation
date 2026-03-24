@@ -1,8 +1,6 @@
 const Product = require('../models/Product');
-
-// desc 
-// route
-// access
+const { generateProductEmbedding } = require('../utils/embeddingService');
+const { upsertProductVector, deleteProductVector, searchSimilarProducts } = require('../utils/qdrantOperations');
 
 exports.getAllProducts = async (req, res) => {
     try {
@@ -58,6 +56,23 @@ exports.createProduct = async (req, res) => {
             category,
             stock
         });
+
+        console.log('Generating product embedding...');
+        const embedding = await generateProductEmbedding(product);
+
+        console.log('Store the vector in Qdrant');
+        await upsertProductVector(
+            product._id.toString(),
+            embedding,
+            {
+                name: product.name,
+                category: product.category,
+                price: product.price
+            }
+        );
+
+        product.qdrantId = product._id.toString();
+        await product.save();
 
         res.status(201).json({
             success: true,
@@ -115,6 +130,13 @@ exports.deleteProduct = async (req, res) => {
             });
         }
 
+        if(product.qdrantId) {
+            await deleteProductVector(product.qdrantId);
+        }
+
+        // delete from MongoDB
+        await product.deleteOne();
+
         res.status(200).json({
             success: true,
             message: 'Product deleted successfully'
@@ -158,6 +180,51 @@ exports.searchProduct = async (req, res) => {
     }
 }
 
+exports.semanticSearch = async (req, res) => {
+    try {
+        const { query, limit=10 } = req.body;
 
+        // no query provided
+        if (!query) {
+            return res.status(400).json({
+                success: false,
+                message: 'Search query is required'
+            });
+        }
+
+        // Generate embedding for seach query
+        const { generateEmbedding } = require('../utils/embeddingService');
+        const queryEmbedding = await generateEmbedding(query);
+
+        // search in Qdrant
+        const results = await searchSimilarProducts(queryEmbedding, limit);
+
+        const productIds = results.map(r => r.payload.productId);
+        const products = await Product.find({_id: {$in: productIds}});
+
+        // Add similarity score
+        const productsWithScores = products.map(product => {
+            const result = results.find(r => r.payload.productId === product._id.toString());
+            return {
+                ...product.toObject(),
+                similarityScore: result.score
+            };
+        });
+
+        // Sort by score
+        productsWithScores.sort((a, b) => b.similarityScore - a.similarityScore);
+        res.status(200).json({
+            success: true,
+            count: productsWithScores.length,
+            data: productsWithScores
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Semantic search failed',
+            error: error.message
+        });
+    }
+};
 
 

@@ -24,7 +24,7 @@ const initializeQdrant = async () => {
             console.log('Creating products collection');
             await qdrantClient.createCollection(COLLECTIONS.PRODUCTS, {
                 vectors: {
-                    size: 1536,
+                    size: 768,
                     distance: 'Cosine'
                 }
             });
@@ -39,7 +39,7 @@ const initializeQdrant = async () => {
             console.log('Creating users collection');
             await qdrantClient.createCollection(COLLECTIONS.USERS, {
                 vectors: {
-                    size: 1536,
+                    size: 768,
                     distance: 'Cosine'
                 }
             });
