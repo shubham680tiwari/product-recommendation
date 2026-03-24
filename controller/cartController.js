@@ -91,6 +91,21 @@ exports.addToCart = async (req, res) => {
 
         await cart.populate('items.productId', 'name price');
 
+        // Track interactions in uvg
+        const interactionController = require('./interactionController');
+        await interactionController.trackInteraction(
+            {
+                body: {
+                    userId,
+                    productId,
+                    interactionType: 'cart'
+                }
+            },
+            {
+                status: () => ({json: () => {}}) //Mock response
+            }
+        )
+
         return res.status(200).json({
             success: true,
             message: 'Item Added to Cart',

@@ -6,6 +6,7 @@ const connectDB = require('./config/db')
 const productRoutes = require('./routes/productRoutes');
 const userRoutes = require('./routes/userRoutes');
 const cartRoutes = require('./routes/cartRoutes');
+const interactionRoutes = require('./routes/interactionRoutes');
 const { initializeQdrant } = require('./config/qdrant');
 
 const app = express();
@@ -41,6 +42,7 @@ app.post('/test-embedding', async (req, res) => {
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/cart', cartRoutes)
+app.use('api/interaction', interactionRoutes);
 
 
 // Test route
