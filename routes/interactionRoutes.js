@@ -7,6 +7,6 @@ const {
 } = require('../controller/interactionController');
 
 router.post('/track', trackInteraction);
-router.get('profile/:userId', getUserProfile);
+router.get('/profile/:userId', getUserProfile);
 
 module.exports = router;

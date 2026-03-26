@@ -7,6 +7,7 @@ const productRoutes = require('./routes/productRoutes');
 const userRoutes = require('./routes/userRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const interactionRoutes = require('./routes/interactionRoutes');
+const recommendationRoutes = require('./routes/recommendationRoutes');
 const { initializeQdrant } = require('./config/qdrant');
 
 const app = express();
@@ -21,28 +22,11 @@ initializeQdrant()
 app.use(cors());
 app.use(express.json());
 
-app.post('/test-embedding', async (req, res) => {
-  const {generateEmbedding} = require('./utils/embeddingService');
-
-  try {
-    const embedding = await generateEmbedding('Macbook M5 pro');
-    res.json({
-      success: true,
-      dimension: embedding.length,
-      sampleData: embedding.slice(0, 10)
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    })
-  }
-});
-
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/cart', cartRoutes)
-app.use('api/interaction', interactionRoutes);
+app.use('/api/interaction', interactionRoutes);
+app.use('/api/recommendations', recommendationRoutes);
 
 
 // Test route
