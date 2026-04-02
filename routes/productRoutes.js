@@ -7,15 +7,17 @@ const {
     updateProduct,
     deleteProduct,
     searchProduct,
-    semanticSearch
+    semanticSearch,
+    hybridSearch
 } = require('../controller/productController');
 
 router.route('/')
     .get(getAllProducts)
     .post(createProduct);
 
-router.post('/semantic-search', semanticSearch);
 router.get('/search', searchProduct);
+router.post('/semantic-search', semanticSearch);
+router.post('/hybrid-search', hybridSearch)
 
 router.route('/:id')
     .get(getProductById)

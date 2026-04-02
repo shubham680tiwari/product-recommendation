@@ -39,6 +39,11 @@ const productSchema = new mongoose.Schema(
             }
         },
 
+        imageUrl: {
+            type: String,
+            default: 'https://picsum.photos/300'
+        },
+
         qdrantId: {
             type: String,
             default: null

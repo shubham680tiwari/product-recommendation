@@ -227,4 +227,108 @@ exports.semanticSearch = async (req, res) => {
     }
 };
 
+// Add this NEW function
+exports.hybridSearch = async (req, res) => {
+  try {
+    const { query, limit = 20, textWeight = 0.4, semanticWeight = 0.6 } = req.body;
+    
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        message: 'Search query is required'
+      });
+    }
+
+    // Run both searches in parallel
+    const [textResults, semanticResults] = await Promise.all([
+      // Text search
+      Product.find(
+        { $text: { $search: query } },
+        { score: { $meta: 'textScore' } }
+      ).limit(limit).lean(),
+      
+      // Semantic search
+      (async () => {
+        const { generateEmbedding } = require('../utils/embeddingService');
+        const { searchSimilarProducts } = require('../utils/qdrantOperations');
+        
+        const queryEmbedding = await generateEmbedding(query);
+        const vectorResults = await searchSimilarProducts(queryEmbedding, limit);
+        
+        // Get product details
+        const productIds = vectorResults.map(r => r.payload.productId);
+        const products = await Product.find({ _id: { $in: productIds } }).lean();
+        
+        // Attach scores
+        return products.map(product => {
+          const result = vectorResults.find(r => r.payload.productId === product._id.toString());
+          return {
+            ...product,
+            semanticScore: result.score
+          };
+        });
+      })()
+    ]);
+
+    // Normalize text scores (MongoDB text scores can be large)
+    const maxTextScore = Math.max(...textResults.map(p => p.score || 1), 1);
+    textResults.forEach(p => {
+      p.normalizedTextScore = (p.score || 0) / maxTextScore;
+    });
+
+    // Combine results
+    const combinedMap = new Map();
+
+    // Add text results
+    textResults.forEach(product => {
+      combinedMap.set(product._id.toString(), {
+        ...product,
+        textScore: product.normalizedTextScore,
+        semanticScore: 0,
+        hybridScore: product.normalizedTextScore * textWeight
+      });
+    });
+
+    // Add/merge semantic results
+    semanticResults.forEach(product => {
+      const id = product._id.toString();
+      if (combinedMap.has(id)) {
+        // Product found in both - update scores
+        const existing = combinedMap.get(id);
+        existing.semanticScore = product.semanticScore;
+        existing.hybridScore = (existing.textScore * textWeight) + (product.semanticScore * semanticWeight);
+      } else {
+        // Only in semantic results
+        combinedMap.set(id, {
+          ...product,
+          textScore: 0,
+          hybridScore: product.semanticScore * semanticWeight
+        });
+      }
+    });
+
+    // Convert to array and sort by hybrid score
+    const hybridResults = Array.from(combinedMap.values())
+      .sort((a, b) => b.hybridScore - a.hybridScore)
+      .slice(0, limit);
+
+    res.status(200).json({
+      success: true,
+      count: hybridResults.length,
+      data: hybridResults,
+      metadata: {
+        textResultsCount: textResults.length,
+        semanticResultsCount: semanticResults.length,
+        weights: { textWeight, semanticWeight }
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Hybrid search failed',
+      error: error.message
+    });
+  }
+};
 
