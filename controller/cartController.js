@@ -5,7 +5,7 @@ const Product = require('../models/Product');
 exports.getCart = async (req, res) => {
     try {
         const cart = await Cart.findOne({userId: req.params.userId})
-            .populate('items.productId', 'name price');
+            .populate('items.productId', 'name price imageUrl');
 
         if(!cart) {
             return res.status(200).json({
@@ -15,15 +15,18 @@ exports.getCart = async (req, res) => {
             });
         }
 
-        // Calculate Totals
+        // Filter out items with null productId
+        const validItems = cart.items.filter(item => item.productId);
 
-        const totalItems = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-        const totalPrice = cart.items.reduce((sum, item) => sum + (item.priceAtAdd * item.quantity, 0));
+        // Calculate Totals
+        const totalItems = validItems.reduce((sum, item) => sum + item.quantity, 0);
+        const totalPrice = validItems.reduce((sum, item) => sum + (item.priceAtAdd * item.quantity), 0);
 
         res.status(200).json({
             success: true,
             data: {
                 ...cart.toObject(),
+                items: validItems,
                 totalItems,
                 totalPrice
             }
@@ -43,7 +46,6 @@ exports.getCart = async (req, res) => {
 exports.addToCart = async (req, res) => {
     try {
         const {userId, productId, quantity = 1} = req.body;
-        console.log('req body', req.body);
         const product = await Product.findById(productId);
         
         if(!product) {
@@ -175,7 +177,7 @@ exports.removeFromCart = async (req, res) => {
         const { userId, productId } = req.body;
 
         let cart = await Cart.findOne({userId});
-
+        console.log('cart', cart);
         if (!cart) {
             return res.status(404).json({
                 success: false,
@@ -208,7 +210,7 @@ exports.removeFromCart = async (req, res) => {
 
 exports.clearCart = async (req, res) => {
     try {
-        const cart = await Cart.findOne({userId: req.param.userId});
+        const cart = await Cart.findOne({userId: req.params.userId});
 
         if (!cart) {
             return res.status(404).json({

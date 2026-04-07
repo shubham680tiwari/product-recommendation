@@ -46,12 +46,20 @@ const searchSimilarProducts = async (vector, limit=10, filter=null) => {
 // Get product vector by Id
 const getProductVector = async (productId) => {
     try {
-        const points = await qdrantClient.retrieve(COLLECTIONS.PRODUCTS, {
-            ids: [productId],
-            with_vector: true
+        // Search for the point with payload.productId matching the given productId
+        const searchResults = await qdrantClient.scroll(COLLECTIONS.PRODUCTS, {
+            filter: {
+                must: [
+                    { key: 'productId', match: { value: productId } }
+                ]
+            },
+            with_vector: true,
+            limit: 1
         });
-
-        return points[0] || null;
+        if (searchResults && searchResults.points && searchResults.points.length > 0) {
+            return searchResults.points[0];
+        }
+        return null;
     } catch (error) {
         console.error('Failed to get product vector', error);
         return null;

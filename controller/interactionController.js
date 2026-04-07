@@ -14,28 +14,26 @@ exports.trackInteraction = async (req, res) => {
 
         const weight = weights[interactiontype] || 1;
 
+
         // get product vector from Qdrant
         const productPoint = await getProductVector(productId);
-
         if(!productPoint || !productPoint.vector) {
             return res.status(404).json({
                 success: false,
                 message: 'Product vector not found'
             });
         }
-
         const productVector = productPoint.vector;
 
         // Find or create user vector growth
-        let uvg = await userVectorGrowth.create({ userId });
-
+        let uvg = await userVectorGrowth.findOne({ userId });
         if(!uvg) {
             uvg = await userVectorGrowth.create({
                 userId,
                 sumVector: productVector.map(v => v * weight),
                 totalWeight: weight,
                 interactionCount: 1
-            })
+            });
         } else {
             uvg.sumVector = uvg.sumVector.map((sum, i) => sum + (productVector[i] * weight));
             uvg.totalWeight += weight;

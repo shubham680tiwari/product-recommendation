@@ -19,7 +19,7 @@ const initializeQdrant = async () => {
         const collections = await qdrantClient.getCollections();
 
         const productCollectionExists = collections.collections.some(col => col.name === COLLECTIONS.PRODUCTS);
-        
+
         if (!productCollectionExists) {
             console.log('Creating products collection');
             await qdrantClient.createCollection(COLLECTIONS.PRODUCTS, {
@@ -33,8 +33,23 @@ const initializeQdrant = async () => {
             console.log('Product collection already exists');
         }
 
+        // Ensure payload index for productId exists
+        try {
+            await qdrantClient.createPayloadIndex(COLLECTIONS.PRODUCTS, {
+                field_name: 'productId',
+                field_schema: 'keyword'
+            });
+            console.log('Payload index for productId created');
+        } catch (indexErr) {
+            if (indexErr.message && indexErr.message.includes('already exists')) {
+                console.log('Payload index for productId already exists');
+            } else {
+                console.error('Failed to create payload index for productId:', indexErr.message);
+            }
+        }
+
         const userCollectionExists = collections.collections.some(col => col.name === COLLECTIONS.USERS);
-        
+
         if (!userCollectionExists) {
             console.log('Creating users collection');
             await qdrantClient.createCollection(COLLECTIONS.USERS, {

@@ -96,14 +96,15 @@ exports.getSimilarProducts = async (req, res) => {
         const productIds = filtered.map(r => r.payload.productId);
         const products = await Product.find({_id: { $in: productIds }});
 
+
         // Add scores to recommended products
         const productsWithScores = products.map(product => {
             const result = filtered.find(
-                r => r.payload.productId = productId._id.toString()
+                r => r.payload.productId === product._id.toString()
             );
             return {
                 ...product.toObject(),
-                similarityScore: result.score
+                similarityScore: result ? result.score : null
             };
         });
 

@@ -16,8 +16,8 @@ router.route('/')
     .post(createProduct);
 
 router.get('/search', searchProduct);
-router.post('/semantic-search', semanticSearch);
 router.post('/hybrid-search', hybridSearch)
+router.post('/semantic-search', semanticSearch);
 
 router.route('/:id')
     .get(getProductById)

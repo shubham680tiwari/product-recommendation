@@ -2,6 +2,8 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const Product = require('./models/Product');
 const db = require('./config/db');
+const { generateProductEmbedding } = require('./utils/embeddingService');
+const { upsertProductVector } = require('./utils/qdrantOperations');
 
 const products = [
   {
@@ -191,8 +193,27 @@ async function seedProducts() {
   try {
     await db();
     await Product.deleteMany({});
-    await Product.insertMany(products);
-    console.log('Products seeded successfully!');
+    const insertedProducts = await Product.insertMany(products);
+    console.log('Products seeded successfully in MongoDB!');
+
+    // For each product, generate embedding and upsert to Qdrant
+    for (const product of insertedProducts) {
+      try {
+        const embedding = await generateProductEmbedding(product);
+        await upsertProductVector(
+          product._id.toString(),
+          embedding,
+          {
+            name: product.name,
+            category: product.category,
+            price: product.price
+          }
+        );
+        console.log(`Product ${product.name} upserted to Qdrant.`);
+      } catch (err) {
+        console.error(`Failed to upsert product ${product.name} to Qdrant:`, err.message);
+      }
+    }
     process.exit();
   } catch (error) {
     console.error('Error seeding products:', error);
