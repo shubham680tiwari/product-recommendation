@@ -15,7 +15,6 @@ const COLLECTIONS = {
 // Initialize a collection
 const initializeQdrant = async () => {
     try {
-        console.log('Checking if collection already exists');
         const collections = await qdrantClient.getCollections();
 
         const productCollectionExists = collections.collections.some(col => col.name === COLLECTIONS.PRODUCTS);
@@ -39,7 +38,6 @@ const initializeQdrant = async () => {
                 field_name: 'productId',
                 field_schema: 'keyword'
             });
-            console.log('Payload index for productId created');
         } catch (indexErr) {
             if (indexErr.message && indexErr.message.includes('already exists')) {
                 console.log('Payload index for productId already exists');
