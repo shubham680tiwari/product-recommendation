@@ -18,11 +18,10 @@ connectDB();
 // Intialize Qdrant DB
 initializeQdrant()
 
-// CORS
-const allowedOrigins = [
-    'http://localhost:3000/',
-    process.env.FRONTEND_URL
-];
+app.use(cors({
+    origin: '*',  // Allows ALL origins
+    credentials: true
+}));
 
 // Middleware
 app.use(cors());
